@@ -10,9 +10,9 @@ We have 3 docker containers:
 
 Run locally
 1. git clone https://github.com/alexunder193/search_engine
-2. cd search_engine (get into folder search_engine)
-3. download books from https://drive.google.com/drive/folders/1dTDZ9HtjXQkQnT2Sf-Xj5Z9Mwk1Js1uX?usp=sharing
-4.Extract zip file and place "books" folder in the same level as public/ and server/ folders.
+2. cd search_engine (get into folder search_engine) 
+3. download books from https://drive.google.com/drive/folders/1dTDZ9HtjXQkQnT2Sf-Xj5Z9Mwk1Js1uX?usp=sharing 
+4. Extract zip file and place "books" folder in the same level as public/ and server/ folders.
 5. docker-compose build
 6. docker-compose up
 7. docker exec gs-api "node" "server/load_books.js" (script need approximately 1 minute to complete).

@@ -3,20 +3,11 @@ const path = require('path')
 const esConnection = require('./connection')
 
 /** Read an individual book text file, and extract the title, author, and paragraphs */
-function parseBookFile (filePath) {
+function load_content (filePath) {
     const book = fs.readFileSync(filePath, 'utf8')
   
     // Find book title and author
-    const title = book.match(/^Title:\s(.+)$/m)[1]
-    const authorMatch = book.match(/^Author:\s(.+)$/m)
-    const author = (!authorMatch || authorMatch[1].trim() === '') ? 'Unknown Author' : authorMatch[1]
-  
-    console.log(`Reading Book - ${title} By ${author}`)
-  
-    // Find Guttenberg metadata header and footer
-    const startOfBookMatch = book.match(/^\*{3}\s*START OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m)
-    const startOfBookIndex = startOfBookMatch.index + startOfBookMatch[0].length
-    const endOfBookIndex = book.match(/^\*{3}\s*END OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m).index
+    const { startOfBookIndex, endOfBookIndex, title, author } = parse_paragraphs(book)
   
     // Clean book text and split into array of paragraphs
     const paragraphs = book
@@ -30,7 +21,21 @@ function parseBookFile (filePath) {
     return { title, author, paragraphs } //object containing the book's title, author, and an array of paragraphs within the book.
 }
 
-async function insertBookData (title, author, paragraphs) {
+function parse_paragraphs(book) {
+  const title = book.match(/^Title:\s(.+)$/m)[1]
+  const authorMatch = book.match(/^Author:\s(.+)$/m)
+  const author = (!authorMatch || authorMatch[1].trim() === '') ? 'Unknown Author' : authorMatch[1]
+
+  console.log(`Reading Book - ${title} By ${author}`)
+
+  // Find header and footer
+  const startOfBookMatch = book.match(/^\*{3}\s*START OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m)
+  const startOfBookIndex = startOfBookMatch.index + startOfBookMatch[0].length
+  const endOfBookIndex = book.match(/^\*{3}\s*END OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m).index
+  return { startOfBookIndex, endOfBookIndex, title, author }
+}
+
+async function add_data (title, author, paragraphs) {
     let bulkOps = []
   
     // Add an index operation for each section in the book
@@ -60,7 +65,7 @@ async function insertBookData (title, author, paragraphs) {
 
 
 /** parse and index all files from the books directory */
-async function readAndInsertBooks () {
+async function read_books () {
   try {
     // Clear previous index
     await esConnection.resetIndex()
@@ -73,12 +78,12 @@ async function readAndInsertBooks () {
     for (let file of files) {
       console.log(`Reading File - ${file}`)
       const filePath = path.join('./books', file)
-      const { title, author, paragraphs } = parseBookFile(filePath)
-      await insertBookData(title, author, paragraphs)
+      const { title, author, paragraphs } = load_content(filePath)
+      await add_data(title, author, paragraphs)
     }
   } catch (err) {
     console.error(err)
   }
 }
 
-readAndInsertBooks()
+read_books()
